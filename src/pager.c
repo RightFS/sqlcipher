@@ -7466,6 +7466,15 @@ int sqlite3PagerCheckpoint(
   return rc;
 }
 
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+int sqlite3PagerLockCheckpoint(Pager *pPager, sqlite3 *db, int lock) {
+    if( pPager->pWal ){
+        return sqlite3WalLockCheckPoint(pPager->pWal, db, lock);
+    }
+    return SQLITE_OK;
+}
+#endif
+
 int sqlite3PagerWalCallback(Pager *pPager){
   return sqlite3WalCallback(pPager->pWal);
 }

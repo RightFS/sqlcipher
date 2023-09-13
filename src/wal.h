@@ -110,6 +110,10 @@ int sqlite3WalCheckpoint(
   int *pnCkpt                     /* OUT: Number of backfilled frames in WAL */
 );
 
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+int sqlite3WalLockCheckPoint(Wal *pWal, sqlite3 *db, int lock);
+#endif
+
 /* Return the value to pass to a sqlite3_wal_hook callback, the
 ** number of frames in the WAL at the point of the last commit since
 ** sqlite3WalCallback() was called.  If no commits have occurred since

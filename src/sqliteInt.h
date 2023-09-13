@@ -1448,8 +1448,10 @@ struct sqlite3 {
   int (*xWalCallback)(void *, sqlite3 *, const char *, int);
   void *pWalArg;
 #ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
-  void (*xCheckpointCallback)(void *, sqlite3 *, const char *);
-  void *pCheckpointArg;
+  void (*xCheckPointBegin)(void *ctx, int nBackFill, int mxFrame, int salt1, int salt2);
+  void (*xCheckPointPage)(void *ctx, int pageNo, void *data, int size);
+  void (*xCheckPointFinish)(void *ctx, int nBackFill, int mxFrame, int salt1, int salt2);
+  void *pCheckpointCtx;
 #endif
 #endif
   void(*xCollNeeded)(void*,sqlite3*,int eTextRep,const char*);

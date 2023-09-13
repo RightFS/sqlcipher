@@ -1849,6 +1849,12 @@ static int walCheckpoint(
   testcase( szPage<=32768 );
   testcase( szPage>=65536 );
   pInfo = walCkptInfo(pWal);
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+  const char* dbPath = NULL;
+  if(db->xCheckPointBegin != NULL){
+      db->xCheckPointBegin(db->pCheckpointCtx, pInfo->nBackfill, pWal->hdr.mxFrame, pWal->hdr.aSalt[0], pWal->hdr.aSalt[1]);
+  }
+#endif
   if( pInfo->nBackfill<pWal->hdr.mxFrame ){
 
     /* EVIDENCE-OF: R-62920-47450 The busy-handler callback is never invoked
@@ -1935,6 +1941,11 @@ static int walCheckpoint(
         testcase( IS_BIG_INT(iOffset) );
         rc = sqlite3OsWrite(pWal->pDbFd, zBuf, szPage, iOffset);
         if( rc!=SQLITE_OK ) break;
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+        if(db->xCheckPointPage != NULL){
+          db->xCheckPointPage(db->pCheckpointCtx, iDbpage, zBuf, szPage);
+        }
+#endif
       }
 
       /* If work was actually accomplished... */
@@ -2037,6 +2048,12 @@ static int walCheckpoint(
       walIndexWriteHdr(pWal);
     }
     walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
+  }
+#endif
+
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+  if(db->xCheckPointFinish != NULL){
+    db->xCheckPointFinish(db->pCheckpointCtx, pInfo->nBackfill, pWal->hdr.mxFrame, pWal->hdr.aSalt[0], pWal->hdr.aSalt[1]);
   }
 #endif
 
@@ -3810,6 +3827,18 @@ int sqlite3WalCheckpoint(
   WALTRACE(("WAL%p: checkpoint %s\n", pWal, rc ? "failed" : "ok"));
   return (rc==SQLITE_OK && eMode!=eMode2 ? SQLITE_BUSY : rc);
 }
+
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+int sqlite3WalLockCheckPoint(Wal *pWal, sqlite3 *db, int lock) {
+    if( pWal->readOnly ) return SQLITE_OK;
+    if( lock == 0 ){
+        walUnlockExclusive(pWal, WAL_CKPT_LOCK, 1);
+        return SQLITE_OK;
+    } else {
+        return walLockExclusive(pWal, WAL_CKPT_LOCK, 1);
+    }
+}
+#endif
 
 /* Return the value to pass to a sqlite3_wal_hook callback, the
 ** number of frames in the WAL at the point of the last commit since

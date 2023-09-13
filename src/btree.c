@@ -10121,6 +10121,19 @@ int sqlite3BtreeCheckpoint(Btree *p, int eMode, int *pnLog, int *pnCkpt){
   return rc;
 }
 
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+int sqlite3BtreeLockCheckPoint(Btree *p, int lock) {
+    int rc = SQLITE_OK;
+    if( p ){
+      BtShared *pBt = p->pBt;
+      sqlite3BtreeEnter(p);
+        rc = sqlite3PagerLockCheckpoint(pBt->pPager, p->db, lock);
+      sqlite3BtreeLeave(p);
+    }
+    return rc;
+}
+#endif
+
 #endif
 
 /*

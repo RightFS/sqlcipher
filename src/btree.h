@@ -348,6 +348,9 @@ void sqlite3BtreeCursorList(Btree*);
 
 #ifndef SQLITE_OMIT_WAL
   int sqlite3BtreeCheckpoint(Btree*, int, int *, int *);
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+  int sqlite3BtreeLockCheckPoint(Btree*, int);
+#endif
 #endif
 
 /*

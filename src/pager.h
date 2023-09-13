@@ -180,6 +180,10 @@ int sqlite3PagerSharedLock(Pager *pPager);
   int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen);
   int sqlite3PagerCloseWal(Pager *pPager, sqlite3*);
 
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+  int sqlite3PagerLockCheckpoint(Pager *pPager, sqlite3 *db, int lock);
+#endif
+
 # ifdef SQLITE_ENABLE_SNAPSHOT
   int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot);
   int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot);

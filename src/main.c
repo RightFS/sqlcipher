@@ -2332,6 +2332,18 @@ int sqlite3_wal_checkpoint_v2(
 #endif
 }
 
+SQLITE_API int sqlite3_lock_checkpoint(sqlite3 *db, int lock) {
+  int rc;
+  sqlite3_mutex_enter(db->mutex);
+  if(db->nDb == 0){
+    rc = SQLITE_ERROR;
+  }else{
+    rc = sqlite3BtreeLockCheckPoint(db->aDb[0].pBt, lock);
+  }
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
+}
+
 
 /*
 ** Checkpoint database zDb. If zDb is NULL, or if the buffer zDb points
@@ -2346,8 +2358,10 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
 
 #ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
 void *sqlite3_wal_checkpoint_handler(sqlite3 *db,
-                                   void (*xCallback)(void*, sqlite3*, const char *),
-                                   void* pArg){
+                                     void (*xCheckPointBegin)(void *ctx, int nBackFill, int mxFrame, int salt1, int salt2),
+                                     void (*xCheckPointPage)(void *ctx, int pageNo, void *data, int size),
+                                     void (*xCheckPointFinish)(void *ctx, int nBackFill, int mxFrame, int salt1, int salt2),
+                                     void* pCtx){
 #ifndef SQLITE_OMIT_WAL
   void *pRet;
 #ifdef SQLITE_ENABLE_API_ARMOR
@@ -2357,9 +2371,11 @@ void *sqlite3_wal_checkpoint_handler(sqlite3 *db,
   }
 #endif
   sqlite3_mutex_enter(db->mutex);
-  pRet = db->pCheckpointArg;
-  db->xCheckpointCallback = xCallback;
-  db->pCheckpointArg = pArg;
+  pRet = db->pCheckpointCtx;
+  db->xCheckPointBegin = xCheckPointBegin;
+  db->xCheckPointPage = xCheckPointPage;
+  db->xCheckPointFinish = xCheckPointFinish;
+  db->pCheckpointCtx = pCtx;
   sqlite3_mutex_leave(db->mutex);
   return pRet;
 #else
@@ -2407,11 +2423,6 @@ int sqlite3Checkpoint(sqlite3 *db, int iDb, int eMode, int *pnLog, int *pnCkpt){
         bBusy = 1;
         rc = SQLITE_OK;
       }
-#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
-      if( rc==SQLITE_OK && db->xCheckpointCallback) {
-        db->xCheckpointCallback(db->pCheckpointArg, db, db->aDb[i].zDbSName);
-      }
-#endif
     }
   }
 
