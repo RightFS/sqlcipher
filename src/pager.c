@@ -4173,7 +4173,11 @@ int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
     ){
       a = pTmp;
     }
-    sqlite3WalClose(pPager->pWal, db, pPager->walSyncFlags, pPager->pageSize,a);
+    sqlite3WalClose(
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+    pPager,
+#endif
+    pPager->pWal, db, pPager->walSyncFlags, pPager->pageSize,a);
     pPager->pWal = 0;
   }
 #endif
@@ -7455,7 +7459,11 @@ int sqlite3PagerCheckpoint(
 ){
   int rc = SQLITE_OK;
   if( pPager->pWal ){
-    rc = sqlite3WalCheckpoint(pPager->pWal, db, eMode,
+    rc = sqlite3WalCheckpoint(
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+        pPager,
+#endif
+        pPager->pWal, db, eMode,
         (eMode==SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),
         pPager->pBusyHandlerArg,
         pPager->walSyncFlags, pPager->pageSize, (u8 *)pPager->pTmpSpace,
@@ -7470,6 +7478,13 @@ int sqlite3PagerCheckpoint(
 int sqlite3PagerLockCheckpoint(Pager *pPager, sqlite3 *db, int lock) {
     if( pPager->pWal ){
         return sqlite3WalLockCheckPoint(pPager->pWal, db, lock);
+    }
+    return SQLITE_OK;
+}
+
+int sqlite3PagerCodecRead(Pager *pPager, void *data, int pageNo){
+    if(pPager->xCodec && pPager->xCodec(pPager->pCodec, data, pageNo, 3) == 0){
+        return SQLITE_NOMEM_BKPT;
     }
     return SQLITE_OK;
 }
@@ -7625,7 +7640,11 @@ int sqlite3PagerCloseWal(Pager *pPager, sqlite3 *db){
   if( rc==SQLITE_OK && pPager->pWal ){
     rc = pagerExclusiveLock(pPager);
     if( rc==SQLITE_OK ){
-      rc = sqlite3WalClose(pPager->pWal, db, pPager->walSyncFlags,
+      rc = sqlite3WalClose(
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+      pPager,
+#endif
+      pPager->pWal, db, pPager->walSyncFlags,
                            pPager->pageSize, (u8*)pPager->pTmpSpace);
       pPager->pWal = 0;
       pagerFixMaplimit(pPager);

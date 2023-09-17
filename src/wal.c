@@ -1795,6 +1795,10 @@ int walWriteHeader(
 
 static int walIndexReadHdr(Wal *pWal, int *pChanged);
 
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+int sqlite3PagerCodecRead(void *pPager, void *data, int pageNo);
+#endif
+
 /*
 ** Copy as much content as we can from the WAL back into the database file
 ** in response to an sqlite3_wal_checkpoint() request or the equivalent.
@@ -1827,6 +1831,9 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged);
 ** time.
 */
 static int walCheckpoint(
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+  void *pager,
+#endif
   Wal *pWal,                      /* Wal connection */
   sqlite3 *db,                    /* Check for interrupts on this handle */
   int eMode,                      /* One of PASSIVE, FULL or RESTART */
@@ -1852,7 +1859,8 @@ static int walCheckpoint(
 #ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
   const char* dbPath = NULL;
   if(db->xCheckPointBegin != NULL){
-      db->xCheckPointBegin(db->pCheckpointCtx, pInfo->nBackfill, pWal->hdr.mxFrame, pWal->hdr.aSalt[0], pWal->hdr.aSalt[1]);
+    u32 *aSalt = pWal->hdr.aSalt;
+    db->xCheckPointBegin(db->pCheckpointCtx, pInfo->nBackfill, pWal->hdr.mxFrame, sqlite3Get4byte((u8*)&aSalt[0]), sqlite3Get4byte((u8*)&aSalt[1]));
   }
 #endif
   if( pInfo->nBackfill<pWal->hdr.mxFrame ){
@@ -1942,7 +1950,8 @@ static int walCheckpoint(
         rc = sqlite3OsWrite(pWal->pDbFd, zBuf, szPage, iOffset);
         if( rc!=SQLITE_OK ) break;
 #ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
-        if(db->xCheckPointPage != NULL){
+        if(db->xCheckPointPage != NULL &&
+           sqlite3PagerCodecRead(pager, zBuf, iDbpage) == SQLITE_OK){
           db->xCheckPointPage(db->pCheckpointCtx, iDbpage, zBuf, szPage);
         }
 #endif
@@ -2053,7 +2062,8 @@ static int walCheckpoint(
 
 #ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
   if(db->xCheckPointFinish != NULL){
-    db->xCheckPointFinish(db->pCheckpointCtx, pInfo->nBackfill, pWal->hdr.mxFrame, pWal->hdr.aSalt[0], pWal->hdr.aSalt[1]);
+    u32 *aSalt = pWal->hdr.aSalt;
+    db->xCheckPointFinish(db->pCheckpointCtx, pInfo->nBackfill, pWal->hdr.mxFrame, sqlite3Get4byte((u8*)&aSalt[0]), sqlite3Get4byte((u8*)&aSalt[1]));
   }
 #endif
 
@@ -2084,6 +2094,9 @@ static void walLimitSize(Wal *pWal, i64 nMax){
 ** Close a connection to a log file.
 */
 int sqlite3WalClose(
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+  void *pager,
+#endif
   Wal *pWal,                      /* Wal to close */
   sqlite3 *db,                    /* For interrupt flag */
   int sync_flags,                 /* Flags to pass to OsSync() (or 0) */
@@ -2108,7 +2121,11 @@ int sqlite3WalClose(
       if( pWal->exclusiveMode==WAL_NORMAL_MODE ){
         pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
       }
-      rc = sqlite3WalCheckpoint(pWal, db, 
+      rc = sqlite3WalCheckpoint(
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+          pager,
+#endif
+          pWal, db,
           SQLITE_CHECKPOINT_PASSIVE, 0, 0, sync_flags, nBuf, zBuf, 0, 0
       );
       if( rc==SQLITE_OK ){
@@ -3724,6 +3741,9 @@ int sqlite3WalFrames(
 ** callback. In this case this function runs a blocking checkpoint.
 */
 int sqlite3WalCheckpoint(
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+  void *pager,
+#endif
   Wal *pWal,                      /* Wal connection */
   sqlite3 *db,                    /* Check this handle's interrupt flag */
   int eMode,                      /* PASSIVE, FULL, RESTART, or TRUNCATE */
@@ -3800,7 +3820,11 @@ int sqlite3WalCheckpoint(
     if( pWal->hdr.mxFrame && walPagesize(pWal)!=nBuf ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
-      rc = walCheckpoint(pWal, db, eMode2, xBusy2, pBusyArg, sync_flags, zBuf);
+      rc = walCheckpoint(
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+           pager,
+#endif
+           pWal, db, eMode2, xBusy2, pBusyArg, sync_flags, zBuf);
     }
 
     /* If no error occurred, set the output variables. */
