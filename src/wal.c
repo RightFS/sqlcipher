@@ -1851,6 +1851,7 @@ static int walCheckpoint(
   u32 mxPage;                     /* Max database page to write */
   int i;                          /* Loop counter */
   volatile WalCkptInfo *pInfo;    /* The checkpoint status information */
+  int checkpointed = 0;
 
   szPage = walPagesize(pWal);
   testcase( szPage<=32768 );
@@ -1976,6 +1977,7 @@ static int walCheckpoint(
 #endif
         if( rc==SQLITE_OK ){
           pInfo->nBackfill = mxSafeFrame;
+          checkpointed = 1;
         }
       }
 
@@ -2060,14 +2062,13 @@ static int walCheckpoint(
   }
 #endif
 
+ walcheckpoint_out:
 #ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
-  if(db->xCheckPointFinish != NULL){
+  if(db->xCheckPointFinish != NULL && checkpointed){
     u32 *aSalt = pWal->hdr.aSalt;
     db->xCheckPointFinish(db->pCheckpointCtx, pInfo->nBackfill, pWal->hdr.mxFrame, sqlite3Get4byte((u8*)&aSalt[0]), sqlite3Get4byte((u8*)&aSalt[1]));
   }
 #endif
-
- walcheckpoint_out:
   walIteratorFree(pIter);
   return rc;
 }
