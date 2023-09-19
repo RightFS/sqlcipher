@@ -5169,7 +5169,7 @@ sqlite_int64 enterMutexAndLockShm(sqlite3_file *fd)
   robustFchown(shmFd, sStat.st_uid, sStat.st_gid);
   
   struct flock f;        /* The posix advisory locking structure */
-  f.l_type = F_WRLCK;
+  f.l_type = F_RDLCK;
   f.l_whence = SEEK_SET;
   f.l_start = UNIX_SHM_DMS;
   f.l_len = 1;
