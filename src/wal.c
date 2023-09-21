@@ -1858,10 +1858,12 @@ static int walCheckpoint(
   testcase( szPage>=65536 );
   pInfo = walCkptInfo(pWal);
 #ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
-  const char* dbPath = NULL;
+  u32 currentSalt1 = sqlite3Get4byte((u8*)&pWal->hdr.aSalt[0]);
+  u32 currentSalt2 = sqlite3Get4byte((u8*)&pWal->hdr.aSalt[1]);
+  u32 currentNBackfill = 0;
+  u32 currentMxFrame = 0;
   if(db->xCheckPointBegin != NULL){
-    u32 *aSalt = pWal->hdr.aSalt;
-    db->xCheckPointBegin(db->pCheckpointCtx, pInfo->nBackfill, pWal->hdr.mxFrame, sqlite3Get4byte((u8*)&aSalt[0]), sqlite3Get4byte((u8*)&aSalt[1]));
+    db->xCheckPointBegin(db->pCheckpointCtx, pInfo->nBackfill, pWal->hdr.mxFrame, currentSalt1, currentSalt2);
   }
 #endif
   if( pInfo->nBackfill<pWal->hdr.mxFrame ){
@@ -1992,6 +1994,11 @@ static int walCheckpoint(
     }
   }
 
+#ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
+  currentNBackfill = pInfo->nBackfill;
+  currentMxFrame = pWal->hdr.mxFrame;
+#endif
+
   /* If this is an SQLITE_CHECKPOINT_RESTART or TRUNCATE operation, and the
   ** entire wal file has been copied into the database file, then block 
   ** until all readers have finished using the wal file. This ensures that 
@@ -2066,7 +2073,7 @@ static int walCheckpoint(
 #ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
   if(db->xCheckPointFinish != NULL && checkpointed){
     u32 *aSalt = pWal->hdr.aSalt;
-    db->xCheckPointFinish(db->pCheckpointCtx, pInfo->nBackfill, pWal->hdr.mxFrame, sqlite3Get4byte((u8*)&aSalt[0]), sqlite3Get4byte((u8*)&aSalt[1]));
+    db->xCheckPointFinish(db->pCheckpointCtx, currentNBackfill, currentMxFrame, currentSalt1, currentSalt2);
   }
 #endif
   walIteratorFree(pIter);
