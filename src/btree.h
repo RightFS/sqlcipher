@@ -353,6 +353,11 @@ void sqlite3BtreeCursorList(Btree*);
 #endif
 #endif
 
+#ifdef SQLITE_WCDB
+  void sqlite3BtreeResetPageStat(Btree*);
+  int* sqlite3BtreeGetPageStat(Btree*);
+#endif
+
 /*
 ** If we are not using shared cache, then there is no need to
 ** use mutexes to access the BtShared structures.  So make the

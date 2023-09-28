@@ -184,6 +184,17 @@ int sqlite3PagerSharedLock(Pager *pPager);
   int sqlite3PagerLockCheckpoint(Pager *pPager, sqlite3 *db, int lock);
 #endif
 
+#ifdef SQLITE_WCDB
+  #define Page_Read_Op 0
+  #define Page_Write_Op 1
+  #define Page_Type_Table 0
+  #define Page_Type_Index 1
+  #define Page_Type_OverFlow 2
+  #define Page_Stat_Last_Offset (Page_Type_OverFlow + 1) * 2
+  void sqlite3PagerResetPageStat(Pager* pPager);
+  int* sqlite3PagerGetPageStat(Pager* pPager);
+#endif
+
 # ifdef SQLITE_ENABLE_SNAPSHOT
   int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot);
   int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot);

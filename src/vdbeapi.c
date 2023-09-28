@@ -73,7 +73,10 @@ static SQLITE_NOINLINE void invokeProfileCallback(sqlite3 *db, Vdbe *p){
   }
 #endif
   if( db->mTrace & SQLITE_TRACE_PROFILE ){
-    db->xTrace(SQLITE_TRACE_PROFILE, db->pTraceArg, p, (void*)&iElapse);
+    int* pageStat = sqlite3BtreeGetPageStat(db->aDb[0].pBt);
+    sqlite3_int64* cost = (sqlite3_int64*)(pageStat + Page_Stat_Last_Offset);
+      *cost = iElapse;
+    db->xTrace(SQLITE_TRACE_PROFILE, db->pTraceArg, p, (void*)pageStat);
   }
   p->startTime = 0;
 }
@@ -607,6 +610,7 @@ static int sqlite3Step(Vdbe *p){
     if( (db->mTrace & (SQLITE_TRACE_PROFILE|SQLITE_TRACE_XPROFILE))!=0
         && !db->init.busy && p->zSql ){
       sqlite3OsCurrentTimeInt64(db->pVfs, &p->startTime);
+      sqlite3BtreeResetPageStat(db->aDb[0].pBt);
     }else{
       assert( p->startTime==0 );
     }

@@ -10136,6 +10136,16 @@ int sqlite3BtreeLockCheckPoint(Btree *p, int lock) {
 
 #endif
 
+#ifdef SQLITE_WCDB
+void sqlite3BtreeResetPageStat(Btree *p) {
+  sqlite3PagerResetPageStat(p->pBt->pPager);
+}
+
+int* sqlite3BtreeGetPageStat(Btree *p) {
+  return sqlite3PagerGetPageStat(p->pBt->pPager);
+}
+#endif
+
 /*
 ** Return non-zero if a read (or write) transaction is active.
 */

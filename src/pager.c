@@ -717,7 +717,38 @@ struct Pager {
   Wal *pWal;                  /* Write-ahead log used by "journal_mode=wal" */
   char *zWal;                 /* File name for write-ahead log */
 #endif
+#ifdef SQLITE_WCDB
+  int pageOpStat[Page_Stat_Last_Offset + 2];  // Number of reads and writes on different types of pages
+#endif
 };
+
+#ifdef SQLITE_WCDB
+void sqlite3PagerResetPageStat(Pager* pPager) {
+  memset(pPager->pageOpStat, 0, sizeof(pPager->pageOpStat));
+}
+
+void sqlite3PagerRecordOperation(Pager* pPager, const void* pageData, int op) {
+  assert(op == Page_Read_Op || op == Page_Write_Op);
+  u8 typeByte = ((const u8*)pageData)[0];
+  int pageType = Page_Type_OverFlow;
+  switch (typeByte) {
+    case 0x0D: //Table leaf
+    case 0x05: //Table interior
+    case 'S':  //First Page
+      pageType = Page_Type_Table;
+      break;
+    case 0x02: //Index interior
+    case 0x0A: //Index leaf
+      pageType = Page_Type_Index;
+      break;
+  }
+  pPager->pageOpStat[ 2 * pageType + op ]++;
+}
+
+int* sqlite3PagerGetPageStat(Pager* pPager){
+  return pPager->pageOpStat;
+}
+#endif
 
 /*
 ** Indexes for use with Pager.aStat[]. The Pager.aStat[] array contains
@@ -3071,6 +3102,12 @@ static int readDbPage(PgHdr *pPg){
     }
   }
   CODEC1(pPager, pPg->pData, pPg->pgno, 3, rc = SQLITE_NOMEM_BKPT);
+    
+#ifdef SQLITE_WCDB
+  if(rc == SQLITE_OK) {
+    sqlite3PagerRecordOperation(pPager, pPg->pData, Page_Read_Op);
+  }
+#endif
 
   PAGER_INCR(sqlite3_pager_readdb_count);
   PAGER_INCR(pPager->nRead);
@@ -3236,6 +3273,12 @@ static int pagerWalFrames(
   pList = sqlite3PcacheDirtyList(pPager->pPCache);
   for(p=pList; p; p=p->pDirty){
     pager_set_pagehash(p);
+  }
+#endif
+
+#ifdef SQLITE_WCDB
+  for(p=pList; p; p=p->pDirty){
+    sqlite3PagerRecordOperation(pPager, p->pData, Page_Write_Op);
   }
 #endif
 
