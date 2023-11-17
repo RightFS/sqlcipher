@@ -1697,6 +1697,16 @@ void sqlite3_suspend(sqlite3 *db, int suspend){
   db->suspended = !!suspend;
 }
 
+int sqlite3_is_suspended(sqlite3 *db) {
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) && (db==0 || db->magic!=SQLITE_MAGIC_ZOMBIE) ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
+  return db->suspended;
+}
+
 void sqlite3_unimpeded(sqlite3 *db, int unimpeded)
 {
 #ifdef SQLITE_ENABLE_API_ARMOR

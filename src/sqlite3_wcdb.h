@@ -83,6 +83,8 @@ SQLITE_API int sqlite3_lock_checkpoint(sqlite3 *db, int lock);
  */
 void sqlite3_suspend(sqlite3 *db, int suspend);
 
+int sqlite3_is_suspended(sqlite3 *db);
+
 /*
  ** Ignore suspend and interrupt
  */
