@@ -3718,6 +3718,7 @@ SQLITE_API int sqlite3_table_config(
   const char *tableName,
   int *pAutoIncrement,
   int *pWithoutRowid,
+  int *pVirtual,
   const char **pIntegerPrimaryKey
 ) {
   if( db == 0 || tableName==0 ){
@@ -3759,6 +3760,9 @@ SQLITE_API int sqlite3_table_config(
   }
   if(pWithoutRowid) {
     *pWithoutRowid = (pTab->tabFlags & TF_WithoutRowid)!=0;
+  }
+  if(pVirtual){
+    *pVirtual = IsVirtual(pTab);
   }
     
 error_out:

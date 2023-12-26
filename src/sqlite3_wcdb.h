@@ -43,6 +43,7 @@ SQLITE_API int sqlite3_table_config(
   const char *tableName,
   int *pAutoIncrement,
   int *pWithoutRowid,
+  int *pVirtual,
   const char **pIntegerPrimaryKey
 );
 
