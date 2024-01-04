@@ -51,7 +51,6 @@ set(SQLCIPHER_COMMON_DEFS
 )
 set(SQLCIPHER_COMMON_PRIVATE_DEFS
     SQLITE_CORE
-    SQLCIPHER_CRYPTO_OPENSSL
     OMIT_MEMLOCK
     OMIT_MEM_SECURITY
     SQLCIPHER_PREPROCESSED=1
@@ -59,6 +58,7 @@ set(SQLCIPHER_COMMON_PRIVATE_DEFS
 
 if(ANDROID)
     list(APPEND SQLCIPHER_COMMON_PRIVATE_DEFS 
+        SQLCIPHER_CRYPTO_OPENSSL
         USE_PREAD64=1 
         HAVE_USLEEP=1 
         HAVE_FDATASYNC=1 
@@ -66,12 +66,25 @@ if(ANDROID)
         SQLITE_OS_UNIX=1)
 elseif (WIN32)
     list(APPEND SQLCIPHER_COMMON_PRIVATE_DEFS 
+        SQLCIPHER_CRYPTO_OPENSSL
         SQLITE_4_BYTE_ALIGNED_MALLOC=1 
         SQLITE_SYSTEM_MALLOC=1
         INCLUDE_MSVC_H=1
         SQLITE_OS_WIN=1)
+elseif (APPLE)
+    list(APPEND SQLCIPHER_COMMON_PRIVATE_DEFS
+        SQLCIPHER_CRYPTO_CC=1
+        SQLITE_OS_UNIX=1
+        _HAVE_SQLITE_CONFIG_H 
+        SQLITE_USE_ALLOCA=1
+        SQLITE_ENABLE_BATCH_ATOMIC_WRITE=1
+        SQLITE_OMIT_SHARED_CACHE=1
+        SQLITE_OMIT_LOAD_EXTENSION=1
+        SQLITE_SYSTEM_MALLOC=1
+        USE_PREAD=1)
 else()
     list(APPEND SQLCIPHER_COMMON_PRIVATE_DEFS 
+        SQLCIPHER_CRYPTO_OPENSSL
         _HAVE_SQLITE_CONFIG_H 
         SQLITE_USE_ALLOCA=1
         SQLITE_OS_UNIX=1)
@@ -293,6 +306,10 @@ endif()
 
 if(WIN32)
     target_compile_options(sqlcipher PRIVATE /W4)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        set(CMAKE_C_FLAGS "-Wno-implicit-function-declaration")
+        set(CMAKE_CXX_FLAGS "-Wno-implicit-function-declaration")
+    endif()
 else()
     target_compile_definitions(sqlcipher PRIVATE "SQLITE_API=__attribute__((visibility(\"default\")))")
     target_compile_options(sqlcipher PRIVATE -Wall -Wno-unused -fvisibility=hidden)
