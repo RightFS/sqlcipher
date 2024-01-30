@@ -1840,7 +1840,8 @@ static int walCheckpoint(
   int (*xBusy)(void*),            /* Function to call when busy */
   void *pBusyArg,                 /* Context argument for xBusyHandler */
   int sync_flags,                 /* Flags for OsSync() (or 0) */
-  u8 *zBuf                        /* Temporary buffer to use */
+  u8 *zBuf,                       /* Temporary buffer to use */
+  int *isChanged
 ){
   int rc = SQLITE_OK;             /* Return code */
   int szPage;                     /* Database page-size */
@@ -2048,9 +2049,12 @@ static int walCheckpoint(
       goto walcheckpoint_out;
     }
     pWal->writeLock = 1;
-    int isChanged = 0;
-    rc = walIndexReadHdr(pWal, &isChanged);
-    if(rc != SQLITE_OK || pInfo->nBackfill!=pWal->hdr.mxFrame){
+    int curChanged = 0;
+    rc = walIndexReadHdr(pWal, &curChanged);
+    if(rc != SQLITE_OK || pInfo->nBackfill!=pWal->hdr.mxFrame || curChanged){
+      if(curChanged) {
+        *isChanged = curChanged;
+      }
       goto walcheckpoint_out;
     }
     u32 salt1;
@@ -3817,9 +3821,6 @@ int sqlite3WalCheckpoint(
   /* Read the wal-index header. */
   if( rc==SQLITE_OK ){
     rc = walIndexReadHdr(pWal, &isChanged);
-    if( isChanged && pWal->pDbFd->pMethods->iVersion>=3 ){
-      sqlite3OsUnfetch(pWal->pDbFd, 0, 0);
-    }
   }
 
   /* Copy data from the log to the database file. */
@@ -3832,7 +3833,7 @@ int sqlite3WalCheckpoint(
 #ifdef SQLITE_WCDB_CHECKPOINT_HANDLER
            pager,
 #endif
-           pWal, db, eMode2, xBusy2, pBusyArg, sync_flags, zBuf);
+           pWal, db, eMode2, xBusy2, pBusyArg, sync_flags, zBuf, &isChanged);
     }
 
     /* If no error occurred, set the output variables. */
@@ -3843,7 +3844,10 @@ int sqlite3WalCheckpoint(
   }
 
   if( isChanged ){
-    /* If a new wal-index header was loaded before the checkpoint was 
+    if(pWal->pDbFd->pMethods->iVersion>=3 ){
+      sqlite3OsUnfetch(pWal->pDbFd, 0, 0);
+    }
+    /* If a new wal-index header was loaded before the checkpoint was
     ** performed, then the pager-cache associated with pWal is now
     ** out of date. So zero the cached wal-index header to ensure that
     ** next time the pager opens a snapshot on this database it knows that
