@@ -42,4 +42,5 @@ xcuserdata/*
 /fts5.c
 /fts5.h
 /fts5parse.*
-/.DS_Store
+*.DS_Store
+/.build
