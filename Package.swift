@@ -208,8 +208,7 @@ let package = Package(
                 .define("SQLITE_WCDB_LOCK_HOOK", to: "1"),
                 .define("SQLITE_WCDB_SUSPEND", to: "1"),
                 .define("SQLITE_WCDB_IMPROVED_CHECKPOINT", to: "1"),
-                .headerSearchPath("**"),
-                .unsafeFlags(["-Wno-shorten-64-to-32"])
+                .headerSearchPath("**")
             ]
         )
     ]
