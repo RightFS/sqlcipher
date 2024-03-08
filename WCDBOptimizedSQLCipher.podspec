@@ -2,7 +2,7 @@
 # pod trunk push WCDBOptimizedSQLCipher.podspec --verbose --allow-warnings
 Pod::Spec.new do |sqlcipher|
   sqlcipher.name         = "WCDBOptimizedSQLCipher"
-  sqlcipher.version      = "1.4.3"
+  sqlcipher.version      = "1.4.4"
   sqlcipher.summary      = "Full Database Encryption for SQLite and optimized by WCDB."
   sqlcipher.description  = <<-DESC
                           SQLCipher is an open source extension to SQLite that provides transparent 256-bit AES encryption of database files.
@@ -12,7 +12,7 @@ Pod::Spec.new do |sqlcipher|
   sqlcipher.homepage     = "https://github.com/Tencent/sqlcipher"
   sqlcipher.license      = { :type => "BSD", :file => "LICENSE"}
   sqlcipher.author             = { "Qiuwen-Chen" => "qwchen2008@163.com" }
-  sqlcipher.source       = { :git => "https://github.com/Tencent/sqlcipher.git", :commit => "d55a13797bd15bcd21fc3049b8e6da4f14fba804" }
+  sqlcipher.source       = { :git => "https://github.com/Tencent/sqlcipher.git", :commit => "40871cc3bf3c19cda27725105dd7fab632fdbe69" }
   sqlcipher.module_name = "sqlcipher"
   sqlcipher.public_header_files = [
     "sqlite3.h",
