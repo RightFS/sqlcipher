@@ -175,7 +175,7 @@ Pod::Spec.new do |sqlcipher|
                                       "SQLITE_DEFAULT_LOCKING_MODE=0 " +
                                       "SQLITE_DEFAULT_SYNCHRONOUS=1 " +
                                       "SQLITE_DEFAULT_JOURNAL_SIZE_LIMIT=4194304 " +
-                                      "SQLITE_MAX_SCHEMA_RETRY=50 " +
+                                      "SQLITE_MAX_SCHEMA_RETRY=999 " +
                                       "SQLITE_TEMP_STORE=2 " +
                                       "SQLITE_THREADSAFE=2 " +
                                       "SQLITE_ENABLE_API_ARMOR=1 " +

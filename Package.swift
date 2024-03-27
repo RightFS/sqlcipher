@@ -170,7 +170,7 @@ let package = Package(
                 .define("SQLITE_DEFAULT_LOCKING_MODE", to: "0"),
                 .define("SQLITE_DEFAULT_SYNCHRONOUS", to: "1"),
                 .define("SQLITE_DEFAULT_JOURNAL_SIZE_LIMIT", to: "4194304"),
-                .define("SQLITE_MAX_SCHEMA_RETRY", to: "50"),
+                .define("SQLITE_MAX_SCHEMA_RETRY", to: "999"),
                 .define("SQLITE_TEMP_STORE", to: "2"),
                 .define("SQLITE_THREADSAFE", to: "2"),
                 .define("SQLITE_ENABLE_API_ARMOR", to: "1"),
