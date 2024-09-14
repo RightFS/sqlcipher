@@ -208,7 +208,14 @@ let package = Package(
                 .define("SQLITE_WCDB_LOCK_HOOK", to: "1"),
                 .define("SQLITE_WCDB_SUSPEND", to: "1"),
                 .define("SQLITE_WCDB_IMPROVED_CHECKPOINT", to: "1"),
-                .headerSearchPath("**")
+                .headerSearchPath(""),
+                .headerSearchPath("src"),
+                .headerSearchPath("ext/misc"),
+                .headerSearchPath("ext/rbu"),
+                .headerSearchPath("ext/userauth"),
+                .headerSearchPath("ext/fts3"),
+                .headerSearchPath("ext/rtree"),
+                .headerSearchPath("ext/icu")
             ]
         )
     ]
