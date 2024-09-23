@@ -1,0 +1,9 @@
+{
+  "name" : "sqlcipher",
+  "version-string" : "1.0.0",
+  "builtin-baseline" : "a39a74405f277773aba08018bb797cb4a6614d0c",
+  "dependencies" : [ {
+    "name" : "openssl",
+    "version>=" : "3.3.2#1"
+  } ]
+}

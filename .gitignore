@@ -44,3 +44,5 @@ xcuserdata/*
 /fts5parse.*
 *.DS_Store
 /.build
+/cmake-build-debug
+/.idea
