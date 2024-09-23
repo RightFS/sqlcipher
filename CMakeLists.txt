@@ -304,8 +304,6 @@ target_include_directories(sqlcipher PRIVATE
         $<BUILD_INTERFACE:${SQLCIPHER_ROOT}/ext/fts3>
         $<BUILD_INTERFACE:${SQLCIPHER_ROOT}/ext/rtree>
 )
-
-target_link_libraries(sqlcipher PRIVATE OpenSSL::Crypto)
 target_compile_definitions(sqlcipher PUBLIC ${SQLCIPHER_COMMON_DEFS})
 target_compile_definitions(sqlcipher PRIVATE ${SQLCIPHER_COMMON_PRIVATE_DEFS})
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -328,9 +326,9 @@ endif()
 # Install targets and headers
 install(TARGETS sqlcipher
         EXPORT sqlcipherTargets
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
 )
 install(DIRECTORY ${SQLCIPHER_INSTALL_HEADER_DIR}/sqlcipher DESTINATION include)
 
@@ -338,7 +336,7 @@ install(DIRECTORY ${SQLCIPHER_INSTALL_HEADER_DIR}/sqlcipher DESTINATION include)
 install(EXPORT sqlcipherTargets
         FILE sqlcipherTargets.cmake
         NAMESPACE sqlcipher::
-        DESTINATION lib/cmake/sqlcipher
+        DESTINATION share/sqlcipher
 )
 
 # Create a ConfigVersion.cmake file
@@ -359,5 +357,5 @@ configure_file(sqlcipherConfig.cmake.in
 install(FILES
         "${CMAKE_CURRENT_BINARY_DIR}/sqlcipherConfig.cmake"
         "${CMAKE_CURRENT_BINARY_DIR}/sqlcipherConfigVersion.cmake"
-        DESTINATION lib/cmake/sqlcipher
+        DESTINATION share/sqlcipher
 )
