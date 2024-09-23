@@ -290,6 +290,8 @@ add_library(sqlcipher STATIC
         ${SQLCIPHER_SESSION_SRC}
         ${SQLCIPHER_MISC_SRC}
 )
+target_link_libraries(sqlcipher PUBLIC OpenSSL::Crypto)
+
 # Use generator expressions to handle include directories correctly
 target_include_directories(sqlcipher INTERFACE
         $<BUILD_INTERFACE:${SQLCIPHER_INSTALL_HEADER_DIR}>
