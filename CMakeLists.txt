@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 project(sqlcipher VERSION 1.4.6)
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 find_package(OpenSSL REQUIRED)
 set(SQLCIPHER_ROOT ${CMAKE_CURRENT_LIST_DIR})
 set(SQLCIPHER_INSTALL_HEADER_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
@@ -279,7 +280,7 @@ set(SQLCIPHER_INSTALL_HEADERS
 )
 file(COPY ${SQLCIPHER_INSTALL_HEADERS} DESTINATION ${SQLCIPHER_INSTALL_HEADER_DIR}/sqlcipher)
 
-add_library(sqlcipher STATIC
+add_library(sqlcipher
         ${SQLCIPHER_SRC}
         ${SQLCIPHER_FTS3_SRC}
         ${SQLCIPHER_FTS5_SRC}
@@ -290,6 +291,30 @@ add_library(sqlcipher STATIC
         ${SQLCIPHER_SESSION_SRC}
         ${SQLCIPHER_MISC_SRC}
 )
+
+if (BUILD_SHARED_LIBS)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    #add_definitions(-DWCDB_DLL -DWCDB_BUILD_DLL)
+    if (MSVC)
+        set_property(TARGET ${TARGET_NAME} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    endif ()
+    #        add_compile_options(
+    #            $<$<CONFIG:>:/MD> #---------|
+    #            $<$<CONFIG:Debug>:/MDd> #---|-- Dynamically link the runtime libraries
+    #            $<$<CONFIG:Release>:/MD> #--|
+    #        )
+else ()
+    if (MSVC)
+        set_property(TARGET ${TARGET_NAME} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    endif ()
+    #        add_compile_options(
+    #            $<$<CONFIG:>:/MT> #---------|
+    #            $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
+    #            $<$<CONFIG:Release>:/MT> #--|
+    #            $<$<CONFIG:RelWithDebInfo>:/MT>
+    #        )
+endif ()
+
 target_link_libraries(sqlcipher PUBLIC OpenSSL::Crypto)
 
 # Use generator expressions to handle include directories correctly
